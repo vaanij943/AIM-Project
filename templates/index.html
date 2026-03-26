@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarineTraffic Ports Parser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: "Monaco", "Courier New", monospace;
+            font-size: 13px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: #f9f9fb;
+        }
+        
+        .hint {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-parse {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+        
+        .btn-parse:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-parse:active {
+            transform: translateY(0);
+        }
+        
+        .btn-clear {
+            background: #f0f0f0;
+            color: #333;
+            flex: 1;
+        }
+        
+        .btn-clear:hover {
+            background: #e0e0e0;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .results-header h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+        
+        .result-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 0.95em;
+        }
+        
+        .meta-item {
+            background: #f5f5f5;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: #555;
+        }
+        
+        .meta-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c33;
+        }
+        
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3c3;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        
+        thead {
+            background: #f9f9f9;
+            position: sticky;
+            top: 0;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #555;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .export-btn {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .export-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚓ MarineTraffic Ports Parser</h1>
+        <p class="subtitle">Paste your ports data and get structured results instantly</p>
+        
+        <div class="input-section">
+            <label for="dataInput">Paste your data (CSV, JSON, or HTML table)</label>
+            <textarea id="dataInput" placeholder='Paste CSV like:&#10;portname,flag,unlocode&#10;Amsterdam,NL,NLAMS&#10;&#10;Or JSON array, or HTML table...&#10;&#10;Then click Parse.'></textarea>
+            <p class="hint">📋 Supports: CSV, JSON arrays, or HTML tables</p>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-parse" onclick="parseData()">Parse Data</button>
+            <button class="btn-clear" onclick="clearInput()">Clear</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing your data...</p>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <div id="errorMessage"></div>
+            <div id="successMessage"></div>
+            
+            <div class="results-header">
+                <h2>Parsed Ports</h2>
+                <div class="result-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Format:</span>
+                        <span id="formatResult">-</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Count:</span>
+                        <span id="countResult">0</span>
+                    </div>
+                    <button class="export-btn" onclick="exportJSON()">Export as JSON</button>
+                </div>
+            </div>
+            
+            <div class="table-wrapper">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Port Name</th>
+                            <th>Flag</th>
+                            <th>UNLOCODE</th>
+                            <th>Vessels in Port</th>
+                            <th>Arrivals</th>
+                            <th>Departures</th>
+                            <th>Geographic Area</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <tr><td colspan="7" class="empty-state">Results will appear here</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let lastParsedData = [];
+        
+        function parseData() {
+            const content = document.getElementById("dataInput").value.trim();
+            
+            if (!content) {
+                showError("Please paste some data first");
+                return;
+            }
+            
+            const loading = document.getElementById("loading");
+            const resultsSection = document.getElementById("resultsSection");
+            
+            loading.style.display = "block";
+            resultsSection.style.display = "none";
+            
+            fetch("/parse", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ content: content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = "none";
+                resultsSection.style.display = "block";
+                
+                if (data.success) {
+                    lastParsedData = data.records;
+                    showSuccess(`Successfully parsed ${data.count} records as ${data.format}`);
+                    displayResults(data);
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                loading.style.display = "none";
+                resultsSection.style.display = "block";
+                showError("Error parsing data: " + error.message);
+            });
+        }
+        
+        function displayResults(data) {
+            document.getElementById("formatResult").textContent = data.format;
+            document.getElementById("countResult").textContent = data.count;
+            
+            const tbody = document.getElementById("resultsBody");
+            tbody.innerHTML = "";
+            
+            if (!data.records || data.records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No records to display</td></tr>';
+                return;
+            }
+            
+            data.records.forEach(record => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${record.portname || "-"}</td>
+                    <td>${record.flag || "-"}</td>
+                    <td>${record.unlocode || "-"}</td>
+                    <td>${record.vessels_in_port || "-"}</td>
+                    <td>${record.vessels_arrivals || "-"}</td>
+                    <td>${record.vessels_departures || "-"}</td>
+                    <td>${record.geographical_area_one || "-"}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById("errorMessage");
+            errorDiv.innerHTML = `<div class="error-message"><strong>Error:</strong> ${message}</div>`;
+            document.getElementById("successMessage").innerHTML = "";
+        }
+        
+        function showSuccess(message) {
+            const successDiv = document.getElementById("successMessage");
+            successDiv.innerHTML = `<div class="success-message"><strong>✓ Success:</strong> ${message}</div>`;
+            document.getElementById("errorMessage").innerHTML = "";
+        }
+        
+        function clearInput() {
+            document.getElementById("dataInput").value = "";
+            document.getElementById("resultsSection").style.display = "none";
+            document.getElementById("errorMessage").innerHTML = "";
+            document.getElementById("successMessage").innerHTML = "";
+        }
+        
+        function exportJSON() {
+            if (!lastParsedData || lastParsedData.length === 0) {
+                alert("No data to export");
+                return;
+            }
+            
+            const json = JSON.stringify(lastParsedData, null, 2);
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `ports_${new Date().toISOString().split("T")[0]}.json`;
+            a.click();
+        }
+    </script>
+</body>
+</html>
